@@ -16,11 +16,11 @@ class Bst {
   private TreeNode node;
 
   static void main() {
-    final var tree = TreeNode.builder().value(null).build();
-    final var tree2 = TreeNode.builder().value(null).build();
+    final var tree = TreeNode.builder().value(5).build();
+    final var tree2 = TreeNode.builder().value(0).build();
 
-    insertAll(tree, 5, 3, 7, 2, 4, 6, 5);
-    insertAll(tree2, 0, 1, 2, 8, 9);
+    insertAll(tree, 3, 7, 2, 4, 6, 5);
+    insertAll(tree2, 1, 2, 8, 9);
 
     merge(tree, tree2);
 
@@ -29,7 +29,7 @@ class Bst {
 
     deleteAll(tree, 7, 2);
 
-    System.out.println("pop output:" + pop(tree).value());
+    System.out.println("pop output:" + pop(tree));
 
     System.out.println("\nfind 3: " + find(tree, 3));
 
@@ -50,57 +50,44 @@ class Bst {
     return (k > 0 && k <= sortedSet.size()) ? sortedSet.get(k - 1) : null;
   }
 
-  private static TreeNode lca(final TreeNode node, final Integer value1, final Integer value2) {
-    if (node == null) {
-      return null;
-    }
-
-    if (node.getValue() == null) {
-      return lca(node.getLeft(), value1, value2);
-    }
-
-    if (value1 <= node.getValue() && value2 <= node.getValue()) {
-      return lca(node.getLeft(), value1, value2);
-    } else if (value1 > node.getValue() && value2 > node.getValue()) {
-      return lca(node.getRight(), value1, value2);
-    }
-
-    return node;
+  private static TreeNode lca(final TreeNode node, final int value1, final int value2) {
+    return switch (node) {
+      case null -> null;
+      case final TreeNode n when value1 <= n.getValue() && value2 <= n.getValue() ->
+          lca(n.getLeft(), value1, value2);
+      case final TreeNode n when value1 > n.getValue() && value2 > n.getValue() ->
+          lca(n.getRight(), value1, value2);
+      default -> node;
+    };
   }
 
   private static void replace(
-      @NonNull final TreeNode root, final Integer oldValue, final Integer newValue) {
+      @NonNull final TreeNode root, final int oldValue, final int newValue) {
     delete(root, oldValue);
     insert(root, TreeNode.builder().value(newValue).build());
   }
 
-  private static TreeNode find(final TreeNode node, final Integer value) {
-    if (node == null) {
-      return null;
-    } else if (node.getValue() == null) {
-      return find(node.getLeft(), value);
-    } else if (node.getValue().equals(value)) {
-      return node;
-    } else if (value < node.getValue()) {
-      return find(node.getLeft(), value);
-    } else {
-      return find(node.getRight(), value);
-    }
+  private static TreeNode find(final TreeNode node, final int value) {
+    return switch (node) {
+      case null -> null;
+      case final TreeNode n when n.getValue() == value -> n;
+      case final TreeNode n ->
+          value < n.getValue() ? find(n.getLeft(), value) : find(n.getRight(), value);
+    };
   }
 
   private static PopOutput pop(final TreeNode node) {
-    if (node == null) {
-      return null;
-    }
-
-    if (node.getLeft() == null) {
-      return PopOutput.builder().value(node.getValue()).node(node.getRight()).build();
-    }
-
-    final var popOutput = pop(node.getLeft());
-    node.setLeft(popOutput.node());
-
-    return PopOutput.builder().value(popOutput.value()).node(node).build();
+    return switch (node) {
+      case null -> null;
+      case final TreeNode n when n.getLeft() == null ->
+          PopOutput.builder().value(n.getValue()).node(n.getRight()).build();
+      default -> {
+        final var popOutput = pop(node.getLeft());
+        //noinspection DataFlowIssue
+        node.setLeft(popOutput.node());
+        yield PopOutput.builder().value(popOutput.value()).node(node).build();
+      }
+    };
   }
 
   private static void insertAll(@NonNull final TreeNode node, final Integer... values) {
@@ -115,25 +102,30 @@ class Bst {
     }
   }
 
-  private static TreeNode delete(final TreeNode node, final Integer value) {
-    if (node == null) {
-      return null;
-    }
-    if (node.getValue() == null) {
-      node.setLeft(delete(node.getLeft(), value));
-      return node;
-    }
-    if (value < node.getValue()) {
-      node.setLeft(delete(node.getLeft(), value));
-    } else if (value > node.getValue()) {
-      node.setRight(delete(node.getRight(), value));
-    } else {
-      if (node.getLeft() == null || node.getRight() == null) {
-        return node.getRight() != null ? node.getRight() : node.getLeft();
+  private static TreeNode delete(final TreeNode node, final int value) {
+    return switch (node) {
+      case null -> null;
+      case final TreeNode n when value < n.getValue() -> {
+        n.setLeft(delete(n.getLeft(), value));
+        yield n;
       }
-      node.setValue(pop(node.getRight()).value());
-    }
-    return node;
+      case final TreeNode n when value > n.getValue() -> {
+        n.setRight(delete(n.getRight(), value));
+        yield n;
+      }
+      case final TreeNode n -> {
+        if (n.getLeft() == null || n.getRight() == null) {
+          yield n.getRight() != null ? n.getRight() : n.getLeft();
+        } else {
+          //noinspection DataFlowIssue
+          yield TreeNode.builder()
+              .value(pop(n.getLeft()).value())
+              .left(n.getLeft())
+              .right(n.getRight())
+              .build();
+        }
+      }
+    };
   }
 
   private static void merge(@NonNull final TreeNode node1, @NonNull final TreeNode node2) {
@@ -141,13 +133,7 @@ class Bst {
   }
 
   private static List<Integer> bstToSortedList(final TreeNode node) {
-    if (node == null) {
-      return new ArrayList<>();
-    }
-    if (node.getValue() == null) {
-      return bstToSortedList(node.getLeft());
-    }
-    return bstToSortedList(node, new ArrayList<>());
+    return node == null ? new ArrayList<>() : bstToSortedList(node, new ArrayList<>());
   }
 
   private static List<Integer> bstToSortedList(final TreeNode node, final List<Integer> result) {
@@ -160,28 +146,19 @@ class Bst {
   }
 
   private static TreeNode insert(final TreeNode node, @NonNull final TreeNode value) {
-    if (node == null) {
-      return value;
-    }
-
-    if (value.getValue() == null) {
-      return insert(node, value.getLeft());
-    }
-
-    if (node.getValue() == null) {
-      node.setLeft(insert(node.getLeft(), value));
-      return node;
-    }
-
-    if (value.getValue() <= node.getValue()) {
-      node.setLeft(insert(node.getLeft(), value));
-    } else {
-      node.setRight(insert(node.getRight(), value));
-    }
-
-    return node;
+    return switch (node) {
+      case null -> value;
+      case final TreeNode n when value.getValue() <= n.getValue() -> {
+        n.setLeft(insert(n.getLeft(), value));
+        yield n;
+      }
+      case final TreeNode n -> {
+        n.setRight(insert(n.getRight(), value));
+        yield n;
+      }
+    };
   }
 
   @Builder
-  private record PopOutput(Integer value, TreeNode node) {}
+  private record PopOutput(int value, TreeNode node) {}
 }

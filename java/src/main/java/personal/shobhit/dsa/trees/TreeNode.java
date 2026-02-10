@@ -18,7 +18,7 @@ class TreeNode {
   private static final String GREEN = "\u001B[32m"; // left
   private static final String BLUE = "\u001B[34m"; // right
   private static final String RESET = "\u001B[0m";
-  private Integer value;
+  private final int value;
   private TreeNode left;
   private TreeNode right;
 
