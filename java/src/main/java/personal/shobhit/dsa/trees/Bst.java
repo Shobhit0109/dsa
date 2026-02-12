@@ -1,7 +1,9 @@
 package personal.shobhit.dsa.trees;
 
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.random.RandomGenerator;
 import lombok.Builder;
 import lombok.NonNull;
 
@@ -10,30 +12,37 @@ import lombok.NonNull;
  * finding, and more. This implementation allows duplicate values by inserting them to the left
  * subtree.
  */
-@SuppressWarnings({"SameParameterValue", "ReturnOfNull", "java:S106"})
+@SuppressWarnings({"SameParameterValue", "ReturnOfNull", "java:S106", "DuplicatedCode"})
 @Builder
 class Bst {
   private TreeNode node;
 
   static void main() {
-    final var tree = TreeNode.builder().value(5).build();
-    final var tree2 = TreeNode.builder().value(0).build();
+    TreeNode tree = null;
+    TreeNode tree2 = null;
 
-    insertAll(tree, 3, 7, 2, 4, 6, 5);
-    insertAll(tree2, 1, 2, 8, 9);
+    tree = insertAll(tree, 5, 3, 7, 2, 4, 6, 5);
+    tree2 = insertAll(tree2, 0, 1, 2, 8, 9);
 
-    merge(tree, tree2);
+    final RandomGenerator random = new SecureRandom();
+
+    for (int i = 0; i < 100; i++) {
+      tree = insert(tree, random.nextInt(200000));
+      tree2 = insert(tree2, random.nextInt(200000));
+    }
+
+    tree = merge(tree, tree2);
 
     System.out.println("Original tree:");
     TreeNode.print(tree);
 
-    deleteAll(tree, 7, 2);
+    tree = deleteAll(tree, 7, 2, 5);
 
     System.out.println("pop output:" + pop(tree));
 
     System.out.println("\nfind 3: " + find(tree, 3));
 
-    replace(tree, 4, 10);
+    tree = replace(tree, 4, 10);
 
     System.out.println("\nlca of 6 and 10: " + lca(tree, 6, 10));
     System.out.println("lca of 5 and 10: " + lca(tree, 5, 10));
@@ -61,10 +70,8 @@ class Bst {
     };
   }
 
-  private static void replace(
-      @NonNull final TreeNode root, final int oldValue, final int newValue) {
-    delete(root, oldValue);
-    insert(root, TreeNode.builder().value(newValue).build());
+  private static TreeNode replace(final TreeNode root, final int oldValue, final int newValue) {
+    return insert(delete(root, oldValue), newValue);
   }
 
   private static TreeNode find(final TreeNode node, final int value) {
@@ -90,16 +97,20 @@ class Bst {
     };
   }
 
-  private static void insertAll(@NonNull final TreeNode node, final Integer... values) {
+  private static TreeNode insertAll(final TreeNode node, final int... values) {
+    var ansNode = node;
     for (final var value : values) {
-      insert(node, TreeNode.builder().value(value).build());
+      ansNode = insert(ansNode, value);
     }
+    return ansNode;
   }
 
-  private static void deleteAll(@NonNull final TreeNode node, final Integer... values) {
+  private static TreeNode deleteAll(final TreeNode node, final int... values) {
+    var ansNode = node;
     for (final var value : values) {
-      delete(node, value);
+      ansNode = delete(ansNode, value);
     }
+    return ansNode;
   }
 
   private static TreeNode delete(final TreeNode node, final int value) {
@@ -128,8 +139,13 @@ class Bst {
     };
   }
 
-  private static void merge(@NonNull final TreeNode node1, @NonNull final TreeNode node2) {
-    insert(node1, node2);
+  private static TreeNode merge(@NonNull final TreeNode node1, @NonNull final TreeNode node2) {
+    final var node2List = bstToSortedList(node2);
+    var ansNode1 = node1;
+    for (final var value : node2List) {
+      ansNode1 = insert(ansNode1, value);
+    }
+    return ansNode1;
   }
 
   private static List<Integer> bstToSortedList(final TreeNode node) {
@@ -145,10 +161,10 @@ class Bst {
     return result;
   }
 
-  private static TreeNode insert(final TreeNode node, @NonNull final TreeNode value) {
+  private static TreeNode insert(final TreeNode node, final int value) {
     return switch (node) {
-      case null -> value;
-      case final TreeNode n when value.getValue() <= n.getValue() -> {
+      case null -> TreeNode.builder().value(value).build();
+      case final TreeNode n when value <= n.getValue() -> {
         n.setLeft(insert(n.getLeft(), value));
         yield n;
       }
