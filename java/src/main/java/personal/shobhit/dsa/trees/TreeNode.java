@@ -19,6 +19,7 @@ class TreeNode {
   private static final String BLUE = "\u001B[34m"; // right
   private static final String RESET = "\u001B[0m";
   private final int value;
+  @Builder.Default private int height = 1;
   private TreeNode left;
   private TreeNode right;
 
@@ -44,7 +45,10 @@ class TreeNode {
             + color
             + label
             + (label.isEmpty() ? "" : ": ")
+            + "v:"
             + node.getValue()
+            + ",h:"
+            + node.getHeight()
             + RESET);
 
     final TreeNode left = node.getLeft();
@@ -53,7 +57,9 @@ class TreeNode {
     final boolean hasLeft = left != null;
     final boolean hasRight = right != null;
 
-    if (!hasLeft && !hasRight) return;
+    if (!hasLeft && !hasRight) {
+      return;
+    }
 
     // left child (not tail if right exists)
     if (hasLeft) {
@@ -84,9 +90,5 @@ class TreeNode {
 
     // Print the tree
     print(tree);
-  }
-
-  TreeNode shallowCopy() {
-    return builder().value(this.value).left(this.left).right(this.right).build();
   }
 }
